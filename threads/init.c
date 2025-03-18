@@ -83,7 +83,7 @@ main (void) {
 	console_init ();
 
 	/* Initialize memory system. */
-	mem_end = palloc_init ();
+	mem_end = palloc_init (); // mem_end는 사용가능한 RAM의 마지막 주소
 	malloc_init ();
 	paging_init (mem_end);
 
@@ -102,7 +102,7 @@ main (void) {
 	syscall_init ();
 #endif
 	/* Start thread scheduler and enable interrupts. */
-	thread_start ();
+	thread_start (); // create idle thread and 여기서 enable interrupt.
 	serial_init_queue ();
 	timer_calibrate ();
 
@@ -122,9 +122,9 @@ main (void) {
 	run_actions (argv);
 
 	/* Finish up. */
-	if (power_off_when_done)
-		power_off ();
-	thread_exit ();
+	if (power_off_when_done) // 만약 '-q'가 kernel command line에 들어오면면
+		power_off (); // terminate the machine simulator.
+	thread_exit (); // 현재 thread만 종료, 나머지 thread는 continue running
 }
 
 /* Clear BSS */

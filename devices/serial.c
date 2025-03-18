@@ -84,12 +84,15 @@ serial_init_queue (void) {
 	if (mode == UNINIT)
 		init_poll ();
 	ASSERT (mode == POLL);
-
+	// mode가 polling 기반임을 확실하게 한다.
 	intr_register_ext (0x20 + 4, serial_interrupt, "serial");
+	// 직렬포트의 interrupt에 대해서 interrupt handler 설치
+	// 0x20 + 4가 직렬포트 interrupt 번호
 	mode = QUEUE;
+	// polling 방식에서 interrupt queue모드로 변환환
 	old_level = intr_disable ();
-	write_ier ();
-	intr_set_level (old_level);
+	write_ier (); //CPU가 interrupt 받을수 있게 interrupt 활성화
+	intr_set_level (old_level); // 원래 interrupt level로로
 }
 
 /* Sends BYTE to the serial port. */

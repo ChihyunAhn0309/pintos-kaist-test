@@ -88,12 +88,19 @@ typedef int tid_t;
 struct thread {
 	/* Owned by thread.c. */
 	tid_t tid;                          /* Thread identifier. */
+	int64_t target_ticks;				/* target ticks for sleep list*/
 	enum thread_status status;          /* Thread state. */
 	char name[16];                      /* Name (for debugging purposes). */
-	int priority;                       /* Priority. */
+	int priority;                       /* Donated Priority. */
 
 	/* Shared between thread.c and synch.c. */
 	struct list_elem elem;              /* List element. */
+
+	int original_priority; 				/* Original Priority. */
+	struct list holding_lock;
+	struct lock* waiting;
+
+
 
 #ifdef USERPROG
 	/* Owned by userprog/process.c. */
@@ -133,6 +140,8 @@ const char *thread_name (void);
 void thread_exit (void) NO_RETURN;
 void thread_yield (void);
 
+static void schedule (void);
+
 int thread_get_priority (void);
 void thread_set_priority (int);
 
@@ -142,5 +151,8 @@ int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
 
 void do_iret (struct intr_frame *tf);
+
+bool thread_less_tticks(const struct list_elem *a, const struct list_elem *b, void *aux);
+void thread_insert_sleepL(int64_t ticks);
 
 #endif /* threads/thread.h */

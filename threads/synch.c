@@ -105,12 +105,12 @@ sema_try_down (struct semaphore *sema) {
 void
 sema_up (struct semaphore *sema) {
 	enum intr_level old_level;
-
+	
 	ASSERT (sema != NULL);
 
 	old_level = intr_disable ();
 	if (!list_empty (&sema->waiters))
-		thread_unblock (list_entry (list_pop_front (&sema->waiters),
+		thread_unblock (list_entry (list_pop_front(&sema->waiters),
 					struct thread, elem));
 	sema->value++;
 	intr_set_level (old_level);
@@ -187,10 +187,17 @@ lock_acquire (struct lock *lock) {
 	ASSERT (lock != NULL);
 	ASSERT (!intr_context ());
 	ASSERT (!lock_held_by_current_thread (lock));
-
+	struct thread* curr = thread_current();
+	curr->waiting = lock;
 	sema_down (&lock->semaphore);
 	lock->holder = thread_current ();
+	curr->holding_lock = (lock->semaphore).waiters;
+	int max = thread_max_priority(curr->holding_lock);
+	if(max > curr->priority){
+		curr->priority = max;
+	}
 }
+// 이렇게 말고 함수 하나 더 만들어서 waiting_list계속 돌면서 위에 priority 가져오기기
 
 /* Tries to acquires LOCK and returns true if successful or false
    on failure.  The lock must not already be held by the current
@@ -221,7 +228,8 @@ void
 lock_release (struct lock *lock) {
 	ASSERT (lock != NULL);
 	ASSERT (lock_held_by_current_thread (lock));
-
+	struct thread* lock_owner = lock->holder;
+	lock_owner->waiting = NULL;
 	lock->holder = NULL;
 	sema_up (&lock->semaphore);
 }
@@ -287,6 +295,14 @@ cond_wait (struct condition *cond, struct lock *lock) {
 	sema_down (&waiter.semaphore);
 	lock_acquire (lock);
 }
+
+/* 이 pintos에서 monitor는 세마포어로 wait을 구현하는데, sema_down이후
+현재 이 wait을 호출한 thread의 context가 저장된 상태로 다른 thread로 cpu yield
+그리고 나서 다른 thread에서 이 세마포어를 up시키고 이 thread가 이 semaphore를 얻어
+thread_unblock시 그 바로 밑에 lock을 얻는 것을 요청한다.
+이 lock을 얻기 위해 기다리는 list들을 entry queue라고 하고 조건에 대한
+세마포어를 얻기 위해 기다리는 list들을 waiting queue라고 한다.
+*/
 
 /* If any threads are waiting on COND (protected by LOCK), then
    this function signals one of them to wake up from its wait.

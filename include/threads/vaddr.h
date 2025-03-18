@@ -48,7 +48,7 @@
  *  is mapped. */
 #define ptov(paddr) ((void *) (((uint64_t) paddr) + KERN_BASE))
 
-/* Returns physical address at which kernel virtual address VADDR
+/* Returnse physical address at which krnel virtual address VADDR
  * is mapped. */
 #define vtop(vaddr) \
 ({ \
